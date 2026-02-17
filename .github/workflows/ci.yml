@@ -52,10 +52,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test exchange on Ganache
         run: yarn wsrun test:circleci @0x/contracts-exchange
@@ -68,10 +74,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test integrations on Ganache
         run: yarn wsrun test:circleci @0x/contracts-integrations
@@ -84,10 +96,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test staking contracts on Ganache
         run: yarn wsrun test:circleci @0x/contracts-staking
@@ -100,10 +118,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test rest contracts on Ganache
         run: yarn wsrun test:circleci @0x/contracts-multisig @0x/contracts-utils @0x/contracts-exchange-libs @0x/contracts-erc20 @0x/contracts-erc721 @0x/contracts-erc1155 @0x/contracts-asset-proxy @0x/contracts-exchange-forwarder @0x/contracts-coordinator @0x/contracts-erc20-bridge-sampler @0x/contracts-broker @0x/contracts-zero-ex
@@ -116,10 +140,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Lint
         run: yarn lerna run lint
@@ -147,10 +177,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test contract test utils
         run: yarn wsrun test:circleci @0x/contracts-test-utils
@@ -217,10 +253,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test publish
         run: yarn test:publish:circleci
@@ -234,10 +276,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-artifacts
+          node-version: '8'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
 
       - name: Test doc generation
         run: yarn test:generate_docs:circleci
