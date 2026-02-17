@@ -1,0 +1,270 @@
+name: CI
+
+on:
+  push:
+    branches: [development, master]
+  pull_request:
+    branches: [development, master]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '8'
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+
+      - name: Install Yarn
+        run: npm install --force --global yarn@1.17.0
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile --ignore-engines install || yarn --frozen-lockfile --ignore-engines install
+
+      - name: Build CI
+        run: yarn build:ci
+
+      - name: Build TypeScript
+        run: yarn build:ts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            packages/abi-gen/test-cli/output
+            packages/contract-wrappers/generated_docs
+
+  test-exchange-ganache:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test exchange on Ganache
+        run: yarn wsrun test:circleci @0x/contracts-exchange
+
+  test-integrations-ganache:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test integrations on Ganache
+        run: yarn wsrun test:circleci @0x/contracts-integrations
+
+  test-contracts-staking-ganache:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test staking contracts on Ganache
+        run: yarn wsrun test:circleci @0x/contracts-staking
+
+  test-contracts-rest-ganache:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test rest contracts on Ganache
+        run: yarn wsrun test:circleci @0x/contracts-multisig @0x/contracts-utils @0x/contracts-exchange-libs @0x/contracts-erc20 @0x/contracts-erc721 @0x/contracts-erc1155 @0x/contracts-asset-proxy @0x/contracts-exchange-forwarder @0x/contracts-coordinator @0x/contracts-erc20-bridge-sampler @0x/contracts-broker @0x/contracts-zero-ex
+
+  static-tests:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Lint
+        run: yarn lerna run lint
+
+      - name: Prettier CI
+        run: yarn prettier:ci
+
+      - name: Deps versions CI
+        run: yarn deps_versions:ci
+
+      - name: Diff MD docs CI
+        run: yarn diff_md_docs:ci
+
+      - name: Build 0x.js UMD prod
+        run: cd packages/0x.js && yarn build:umd:prod
+
+      - name: Bundlewatch
+        run: yarn bundlewatch
+
+  test-rest:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test contract test utils
+        run: yarn wsrun test:circleci @0x/contracts-test-utils
+
+      - name: Test abi-gen
+        run: yarn wsrun test:circleci @0x/abi-gen
+
+      - name: Test asset-swapper
+        run: yarn wsrun test:circleci @0x/asset-swapper
+
+      - name: Test contract-artifacts
+        run: yarn wsrun test:circleci @0x/contract-artifacts
+
+      - name: Test assert
+        run: yarn wsrun test:circleci @0x/assert
+
+      - name: Test base-contract
+        run: yarn wsrun test:circleci @0x/base-contract
+
+      - name: Test connect
+        run: yarn wsrun test:circleci @0x/connect
+
+      - name: Test contract-wrappers-test
+        run: yarn wsrun test:circleci @0x/contract-wrappers-test
+
+      - name: Test dev-utils
+        run: yarn wsrun test:circleci @0x/dev-utils
+
+      - name: Test json-schemas
+        run: yarn wsrun test:circleci @0x/json-schemas
+
+      - name: Test order-utils
+        run: yarn wsrun test:circleci @0x/order-utils
+
+      - name: Test orderbook
+        run: yarn wsrun test:circleci @0x/orderbook
+
+      - name: Test sol-compiler
+        run: yarn wsrun test:circleci @0x/sol-compiler
+
+      - name: Test sol-tracing-utils
+        run: yarn wsrun test:circleci @0x/sol-tracing-utils
+
+      - name: Test sol-doc
+        run: yarn wsrun test:circleci @0x/sol-doc
+
+      - name: Test subproviders
+        run: yarn wsrun test:circleci @0x/subproviders
+
+      - name: Test web3-wrapper
+        run: yarn wsrun test:circleci @0x/web3-wrapper
+
+      - name: Test utils
+        run: yarn wsrun test:circleci @0x/utils
+
+      - name: Test instant
+        run: yarn wsrun test:circleci @0x/instant
+
+  test-publish:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test publish
+        run: yarn test:publish:circleci
+        timeout-minutes: 30
+
+  test-doc-generation:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+
+      - name: Test doc generation
+        run: yarn test:generate_docs:circleci
+        timeout-minutes: 20
+
+  test-python:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.7'
+
+      - name: Install Python dependencies
+        run: |
+          cd python-packages
+          python -m ensurepip
+          ./pre_install
+          ./install
+
+      - name: Run Python tests
+        run: |
+          cd python-packages
+          ./parallel coverage run setup.py test
+          ./build_docs
