@@ -1,14 +1,13 @@
 import { ContractSource, Resolver } from '@0x/sol-resolver';
 import { fetchAsync, logUtils } from '@0x/utils';
 import chalk from 'chalk';
-import { exec, spawn } from 'child_process';
+import { spawn } from 'child_process';
 import { ContractArtifact } from 'ethereum-types';
 import * as ethUtil from 'ethereumjs-util';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as requireFromString from 'require-from-string';
 import * as solc from 'solc';
-import { promisify } from 'util';
 
 import { constants } from './constants';
 import { fsWrapper } from './fs_wrapper';
@@ -172,18 +171,43 @@ export async function compileDockerAsync(
         'solc', '--standard-json',
     ];
     return new Promise<solc.StandardOutput>((accept, reject) => {
-        const p = spawn('docker', dockerArgs, { shell: true, stdio: ['pipe', 'pipe', 'inherit'] });
+        let isFinished = false;
+        const finish = (err?: Error, output?: solc.StandardOutput): void => {
+            if (isFinished) {
+                return;
+            }
+            isFinished = true;
+            if (err !== undefined) {
+                reject(err);
+                return;
+            }
+            accept(output as solc.StandardOutput);
+        };
+        const p = spawn('docker', dockerArgs, { stdio: ['pipe', 'pipe', 'pipe'] });
         p.stdin.write(standardInputStr);
         p.stdin.end();
         let fullOutput = '';
-        p.stdout.on('data', (chunk: string) => {
-            fullOutput += chunk;
+        let fullErrorOutput = '';
+        p.stdout.on('data', (chunk: Buffer) => {
+            fullOutput += chunk.toString('utf8');
+        });
+        p.stderr.on('data', (chunk: Buffer) => {
+            fullErrorOutput += chunk.toString('utf8');
+        });
+        p.on('error', (err: Error) => {
+            finish(err);
         });
         p.on('close', code => {
             if (code !== 0) {
-                reject('Compilation failed');
+                const errorMsg = fullErrorOutput.trim();
+                finish(new Error(errorMsg === '' ? 'Compilation failed' : `Compilation failed: ${errorMsg}`));
+                return;
             }
-            accept(JSON.parse(fullOutput));
+            try {
+                finish(undefined, JSON.parse(fullOutput));
+            } catch (err) {
+                finish(new Error('Compilation failed: docker output was not valid JSON'));
+            }
         });
     });
 }
@@ -498,8 +522,30 @@ export function normalizeSolcVersion(fullSolcVersion: string): string {
  * Gets the full version string of a dockerized solc.
  */
 export async function getDockerFullSolcVersionAsync(solidityVersion: string): Promise<string> {
-    const dockerCommand = `docker run ethereum/solc:${solidityVersion} --version`;
-    const versionCommandOutput = (await promisify(exec)(dockerCommand)).stdout.toString();
+    const versionCommandOutput = await new Promise<string>((accept, reject) => {
+        const p = spawn('docker', ['run', `ethereum/solc:${solidityVersion}`, '--version'], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+        });
+        let stdout = '';
+        let stderr = '';
+        p.stdout.on('data', (chunk: Buffer) => {
+            stdout += chunk.toString('utf8');
+        });
+        p.stderr.on('data', (chunk: Buffer) => {
+            stderr += chunk.toString('utf8');
+        });
+        p.on('error', (err: Error) => {
+            reject(err);
+        });
+        p.on('close', code => {
+            if (code !== 0) {
+                const errorMsg = stderr.trim();
+                reject(new Error(errorMsg === '' ? 'Failed to read dockerized solc version' : errorMsg));
+                return;
+            }
+            accept(stdout);
+        });
+    });
     const versionCommandOutputParts = versionCommandOutput.split(' ');
     return normalizeSolcVersion(versionCommandOutputParts[versionCommandOutputParts.length - 1].trim());
 }

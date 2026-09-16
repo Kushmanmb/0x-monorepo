@@ -58,6 +58,7 @@ contract MixinDeploymentConstants {
         view
         returns (IEtherToken wethContract)
     {
+        _assertIsContract(WETH_ADDRESS);
         wethContract = IEtherToken(WETH_ADDRESS);
         return wethContract;
     }
@@ -70,7 +71,21 @@ contract MixinDeploymentConstants {
         view
         returns (IZrxVault zrxVault)
     {
+        _assertIsContract(ZRX_VAULT_ADDRESS);
         zrxVault = IZrxVault(ZRX_VAULT_ADDRESS);
         return zrxVault;
+    }
+
+    /// @dev Reverts if `target` is not a deployed contract.
+    function _assertIsContract(address target)
+        private
+        view
+    {
+        uint256 codeSize;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            codeSize := extcodesize(target)
+        }
+        require(codeSize > 0, "INVALID_DEPLOYMENT_ADDRESS");
     }
 }
