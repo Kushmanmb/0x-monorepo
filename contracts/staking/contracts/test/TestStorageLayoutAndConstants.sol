@@ -36,6 +36,26 @@ contract TestStorageLayoutAndConstants is
         _assertStorageLayout();
     }
 
+    /// @dev Overridden so this regression test does not depend on hard-coded mainnet deployment addresses.
+    function getWethContract()
+        public
+        view
+        returns (IEtherToken wethContract)
+    {
+        wethContract = IEtherToken(address(0x0000000000000000000000000000000000000001));
+        return wethContract;
+    }
+
+    /// @dev Overridden so this regression test does not depend on hard-coded mainnet deployment addresses.
+    function getZrxVault()
+        public
+        view
+        returns (IZrxVault zrxVault)
+    {
+        zrxVault = IZrxVault(address(0x0000000000000000000000000000000000000002));
+        return zrxVault;
+    }
+
     /// @dev This function will fail if the deployment constants change to the point where they
     ///      are considered "invalid".
     function _assertDeploymentConstants()
