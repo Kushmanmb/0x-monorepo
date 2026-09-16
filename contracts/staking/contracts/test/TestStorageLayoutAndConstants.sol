@@ -29,6 +29,28 @@ contract TestStorageLayoutAndConstants is
 {
     using LibBytes for bytes;
 
+    /// @dev Override deployment-constant contract getters so this regression fixture can
+    ///      deploy in the local test environment.
+    function getWethContract()
+        public
+        view
+        returns (IEtherToken wethContract)
+    {
+        wethContract = IEtherToken(address(0x1));
+        return wethContract;
+    }
+
+    /// @dev Override deployment-constant contract getters so this regression fixture can
+    ///      deploy in the local test environment.
+    function getZrxVault()
+        public
+        view
+        returns (IZrxVault zrxVault)
+    {
+        zrxVault = IZrxVault(address(0x2));
+        return zrxVault;
+    }
+
     /// @dev Construction will fail if the storage layout or the deployment constants are incompatible
     ///      with the V1 staking proxy.
     constructor() public {

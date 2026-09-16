@@ -2,7 +2,7 @@
 
 import { PackageJSON } from '@0x/types';
 import { logUtils } from '@0x/utils';
-import { spawn } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as promisify from 'es6-promisify';
 import * as fs from 'fs';
 import * as _ from 'lodash';
@@ -230,21 +230,40 @@ async function updateChangeLogsAsync(updatedPublicPackages: Package[]): Promise<
 
 async function lernaPublishAsync(packageToNextVersion: { [name: string]: string }): Promise<void> {
     return new Promise<void>((resolve, reject) => {
+        const cdVersionsFilepath = path.join(__dirname, 'cd_versions.txt');
         let isFinished = false;
+        let child: ChildProcess | undefined;
         const finish = (err?: Error): void => {
             if (isFinished) {
                 return;
             }
             isFinished = true;
             // Remove temporary cdVersions file
+            let cleanupErr: Error | undefined;
             if (fs.existsSync(cdVersionsFilepath)) {
-                fs.unlinkSync(cdVersionsFilepath);
+                try {
+                    fs.unlinkSync(cdVersionsFilepath);
+                } catch (removeErr) {
+                    cleanupErr = removeErr;
+                }
             }
-            if (err !== undefined) {
-                reject(err);
+            const finalErr = err === undefined ? cleanupErr : err;
+            if (finalErr !== undefined) {
+                reject(finalErr);
                 return;
             }
             resolve();
+        };
+        const terminateChild = (): void => {
+            if (child === undefined) {
+                return;
+            }
+            if (child.stdin !== null && !child.stdin.destroyed) {
+                child.stdin.end();
+            }
+            if (!child.killed) {
+                child.kill();
+            }
         };
         const packageVersionString = _.map(packageToNextVersion, (nextVersion: string, packageName: string) => {
             return `${packageName}|${nextVersion}`;
@@ -253,7 +272,6 @@ async function lernaPublishAsync(packageToNextVersion: { [name: string]: string 
         // `--cdVersions` flag. Since we now need to use `spawn` instead of `exec` when calling Lerna, passing
         // them as a string arg is causing `spawn` to error with `ENAMETOOLONG`. In order to shorten the args
         // passed to `spawn` we now write the new version to a file and pass the filepath to the `cdVersions` arg.
-        const cdVersionsFilepath = path.join(__dirname, 'cd_versions.txt');
         fs.writeFileSync(cdVersionsFilepath, packageVersionString);
         const lernaPublishCmd = `node`;
         const lernaPublishArgs = [
@@ -272,7 +290,7 @@ async function lernaPublishAsync(packageToNextVersion: { [name: string]: string 
         }
         utils.log('Lerna is publishing...');
         try {
-            const child = spawn(lernaPublishCmd, lernaPublishArgs, {
+            child = spawn(lernaPublishCmd, lernaPublishArgs, {
                 cwd: constants.monorepoRootPath,
             });
             child.stdout.on('data', async (data: Buffer) => {
@@ -287,6 +305,7 @@ async function lernaPublishAsync(packageToNextVersion: { [name: string]: string 
                         child.stdin.write(`${result.OTP}\n`);
                     }
                 } catch (err) {
+                    terminateChild();
                     finish(err);
                 }
             });
