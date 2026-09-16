@@ -230,6 +230,22 @@ async function updateChangeLogsAsync(updatedPublicPackages: Package[]): Promise<
 
 async function lernaPublishAsync(packageToNextVersion: { [name: string]: string }): Promise<void> {
     return new Promise<void>((resolve, reject) => {
+        let isFinished = false;
+        const finish = (err?: Error): void => {
+            if (isFinished) {
+                return;
+            }
+            isFinished = true;
+            // Remove temporary cdVersions file
+            if (fs.existsSync(cdVersionsFilepath)) {
+                fs.unlinkSync(cdVersionsFilepath);
+            }
+            if (err !== undefined) {
+                reject(err);
+                return;
+            }
+            resolve();
+        };
         const packageVersionString = _.map(packageToNextVersion, (nextVersion: string, packageName: string) => {
             return `${packageName}|${nextVersion}`;
         }).join(',');
@@ -260,30 +276,36 @@ async function lernaPublishAsync(packageToNextVersion: { [name: string]: string 
                 cwd: constants.monorepoRootPath,
             });
             child.stdout.on('data', async (data: Buffer) => {
-                const output = data.toString('utf8');
-                utils.log('Lerna publish cmd: ', output);
-                const isOTPPrompt = _.includes(output, 'Enter OTP:');
-                if (isOTPPrompt) {
-                    // Prompt for OTP
-                    prompt.start();
-                    const result = await promisify(prompt.get)(['OTP']);
-                    child.stdin.write(`${result.OTP}\n`);
-                }
-                const didFinishPublishing = _.includes(output, 'Successfully published:');
-                if (didFinishPublishing) {
-                    // Remove temporary cdVersions file
-                    fs.unlinkSync(cdVersionsFilepath);
-                    resolve();
+                try {
+                    const output = data.toString('utf8');
+                    utils.log('Lerna publish cmd: ', output);
+                    const isOTPPrompt = _.includes(output, 'Enter OTP:');
+                    if (isOTPPrompt) {
+                        // Prompt for OTP
+                        prompt.start();
+                        const result = await promisify(prompt.get)(['OTP']);
+                        child.stdin.write(`${result.OTP}\n`);
+                    }
+                } catch (err) {
+                    finish(err);
                 }
             });
             child.stderr.on('data', (data: Buffer) => {
                 const output = data.toString('utf8');
                 utils.log('Lerna publish cmd: ', output);
             });
+            child.on('error', (err: Error) => {
+                finish(err);
+            });
+            child.on('close', code => {
+                if (code !== 0) {
+                    finish(new Error(`Lerna publish process exited with code ${code}`));
+                    return;
+                }
+                finish();
+            });
         } catch (err) {
-            // Remove temporary cdVersions file
-            fs.unlinkSync(cdVersionsFilepath);
-            reject(err);
+            finish(err);
         }
     });
 }
