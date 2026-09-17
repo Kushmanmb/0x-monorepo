@@ -98,6 +98,7 @@ const generateConfig = (dischargeTarget, heapConfigOptions, rollbarConfigOptions
         dischargeTarget === 'production'
         ? process.env.INSTANT_FORTMATIC_API_KEY_PRODUCTION
         : process.env.INSTANT_FORTMATIC_API_KEY_DEVELOPMENT; 
+    const stakeUsApi = process.env.STAKE_US_API;
 
     const envVars = {
         GIT_SHA: JSON.stringify(GIT_SHA),
@@ -106,6 +107,7 @@ const generateConfig = (dischargeTarget, heapConfigOptions, rollbarConfigOptions
         HEAP_ENABLED: heapEnabled,
         INSTANT_FORTMATIC_API_KEY: JSON.stringify(fortmaticApiKey),
         INSTANT_INFURA_PROJECT_ID: JSON.stringify(infuraProjectId),
+        STAKE_US_API: JSON.stringify(stakeUsApi),
     };
     if (dischargeTarget) {
         envVars.INSTANT_DISCHARGE_TARGET = JSON.stringify(dischargeTarget);

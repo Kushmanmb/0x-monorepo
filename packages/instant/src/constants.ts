@@ -72,6 +72,7 @@ export const ETHEREUM_NODE_URL_BY_NETWORK = {
 };
 export const ZERO_EX_SITE_URL = 'https://www.0x.org/';
 export const BLOCK_POLLING_INTERVAL_MS = 10000; // 10s
+export const STAKE_US_API = process.env.STAKE_US_API;
 export const NO_ACCOUNT: AccountNotReady = {
     state: AccountState.None,
 };
