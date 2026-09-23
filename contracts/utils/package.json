@@ -59,7 +59,7 @@
         "@0x/tslint-config": "^4.1.0",
         "@0x/types": "^3.2.0",
         "@0x/web3-wrapper": "^7.2.0",
-        "@types/bn.js": "^4.11.0",
+        "@types/bn.js": "^5.2.0",
         "@types/lodash": "4.14.104",
         "@types/mocha": "^5.2.7",
         "@types/node": "12.12.54",
@@ -82,7 +82,7 @@
         "@0x/base-contract": "^6.2.3",
         "@0x/typescript-typings": "^5.1.1",
         "@0x/utils": "^5.5.1",
-        "bn.js": "^4.11.8",
+        "bn.js": "^5.2.5",
         "ethereum-types": "^3.2.0"
     },
     "publishConfig": {
